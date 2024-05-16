@@ -10,6 +10,8 @@ public class State {
 
     private State target;
 
+    private Set<CharSet> aheadCharSet;
+
     Set<State> epsilon = new HashSet<>();
 
     public void setType(StateType type) {
@@ -30,6 +32,10 @@ public class State {
 
     public Set<CharSet> getTransition() {
         return transition;
+    }
+
+    public void setAheadCharSet(Set<CharSet> aheadCharSet) {
+        this.aheadCharSet = aheadCharSet;
     }
 
     public void addTransition(CharSet charSet, State target) {
@@ -85,6 +91,15 @@ public class State {
         return false;
     }
 
+    public boolean aheadCharSetContains(char c) {
+        for(CharSet charSet : aheadCharSet) {
+            if(charSet.contains(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public State getTarget() {
         return target;
     }
@@ -98,4 +113,16 @@ public class State {
         }
         return states;
     }
+
+
+
+//    @Override
+//    public String toString() {
+//        return "State{" +
+//                "type=" + type +
+//                ", transition=" + transition +
+//                ", target=" + target +
+//                ", epsilon=" + epsilon +
+//                '}';
+//    }
 }

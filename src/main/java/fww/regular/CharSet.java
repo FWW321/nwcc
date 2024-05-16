@@ -1,14 +1,18 @@
 package fww.regular;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class CharSet {
     private final Set<Character> chars = new HashSet<>();
 
-    public CharSet() {
-        for (int i = 0; i < 128; i++) {
-            chars.add((char) i);
+    public CharSet(boolean full) {
+        if (full) {
+            for (int i = 0; i < 128; i++) {
+                chars.add((char) i);
+            }
         }
     }
 
@@ -23,7 +27,7 @@ public class CharSet {
     }
 
     public CharSet(char c1, char c2) {
-        if(c1 > c2) {
+        if (c1 > c2) {
             char temp = c1;
             c1 = c2;
             c2 = temp;
@@ -71,11 +75,10 @@ public class CharSet {
 
     //并集
     public CharSet union(CharSet charSet) {
-        if(charSet == null) {
+        if (charSet == null) {
             return this;
         }
-        CharSet result = new CharSet();
-        result.clear();
+        CharSet result = new CharSet(false);
         result.chars.addAll(this.chars);
         result.chars.addAll(charSet.chars);
         return result;
@@ -83,8 +86,7 @@ public class CharSet {
 
     //交集
     public CharSet intersection(CharSet charSet) {
-        CharSet result = new CharSet();
-        result.clear();
+        CharSet result = new CharSet(false);
         for (char aChar : chars) {
             if (charSet.contains(aChar)) {
                 result.addChar(aChar);
@@ -95,8 +97,7 @@ public class CharSet {
 
     //差集
     public CharSet minus(CharSet charSet) {
-        CharSet result = new CharSet();
-        result.clear();
+        CharSet result = new CharSet(false);
         for (char aChar : chars) {
             if (!charSet.contains(aChar)) {
                 result.addChar(aChar);
@@ -111,8 +112,7 @@ public class CharSet {
 
     //补集
     public CharSet complement() {
-        CharSet result = new CharSet();
-        result.clear();
+        CharSet result = new CharSet(false);
         for (int i = 0; i < 128; i++) {
             char c = (char) i;
             if (!contains(c)) {
@@ -129,6 +129,37 @@ public class CharSet {
     public boolean isEmpty() {
         return chars.isEmpty();
     }
+
+    public static char[] charGroupToArray(String charGroupContent) {
+        List<Character> charList = new ArrayList<>();
+
+        for (int i = 0; i < charGroupContent.length(); i++) {
+            char ch = charGroupContent.charAt(i);
+            // 如果当前字符后面跟着'-'，则表示是一个字符范围
+            if (i + 2 < charGroupContent.length() && charGroupContent.charAt(i + 1) == '-') {
+                // 获取范围的起始和结束字符
+                char end = charGroupContent.charAt(i + 2);
+                // 将范围内的所有字符添加到列表中
+                for (char c = ch; c <= end; c++) {
+                    charList.add(c);
+                }
+                // 跳过范围的结束字符和'-'符号
+                i += 2;
+            } else {
+                // 如果不是范围，直接添加字符
+                charList.add(ch);
+            }
+        }
+
+        // 将字符列表转换为字符数组
+        char[] charArray = new char[charList.size()];
+        for (int i = 0; i < charList.size(); i++) {
+            charArray[i] = charList.get(i);
+        }
+
+        return charArray;
+    }
+
 
     @Override
     public int hashCode() {
