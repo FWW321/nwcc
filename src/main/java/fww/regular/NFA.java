@@ -24,15 +24,15 @@ public class NFA {
     }
 
     public void addState(State state) {
-        updateAlphabet(state);
+        state.setTransition(updateAlphabet(state.getTransition()));
         states.add(state);
     }
 
-    public void updateAlphabet(State state) {
+    public Set<CharSet> updateAlphabet(Set<CharSet> charSets) {
         Set<CharSet> newCharSets = new HashSet<>(alphabet);
 
         Set<CharSet> cct = new HashSet<>();
-        for (CharSet t : state.getTransition()) {
+        for (CharSet t : charSets) {
             for (CharSet cc : alphabet) {
                 CharSet cc1 = cc.intersection(t);
                 if (cc1 == null) {
@@ -53,7 +53,7 @@ public class NFA {
             }
         }
         alphabet = newCharSets;
-        state.setTransition(cct);
+        return cct;
     }
 
     public void updateStates(CharSet cc, CharSet cc1, CharSet cc2) {
@@ -270,6 +270,7 @@ public class NFA {
         return nfa;
     }
 
+    //TODO: 该向前看运算符不能识别a/b，当a变长时，a的后缀与b的前缀有公共部分的情况
     private NFA lookaheadRule(NFA s, NFA t){
         NFA nfa = new NFA();
         State start = new State();
@@ -279,7 +280,7 @@ public class NFA {
         s.end.addEpsilon(t.start);
         t.end.addEpsilon(end);
         t.end.setType(StateType.NORMAL);
-        setAHead(s.end);
+        s.end.setType(StateType.AHEAD);
         nfa.addState(start);
         nfa.addState(end);
         nfa.states.addAll(s.states);
@@ -320,16 +321,6 @@ public class NFA {
         return s;
     }
 
-    private NFA or(List<NFA> or) {
-        NFA s = or.getFirst();
-        for (int i = 1; i < or.size(); i++) {
-            NFA t = or.get(i);
-            s = orRule(s, t);
-        }
-        or.clear();
-        return s;
-    }
-
     private Set<State> move(Set<State> states, char c) {
         Set<State> moveStates = new HashSet<>();
         for (State state : states) {
@@ -359,12 +350,26 @@ public class NFA {
         return false;
     }
 
+    private Set<State> getAheads(Set<State> states){
+        Set<State> aheadStates = new HashSet<>();
+        for(State state : states){
+            if(state.getType() == StateType.AHEAD || state.getType() == StateType.AHEAD_FINAL){
+                aheadStates.add(state);
+            }
+        }
+        return aheadStates;
+    }
+
+    //TODO: 接下来将ahead状态的直接前转换作为ahead状态的属性，以便于在DNA中也能实现向前看运算符
     public String match(String s) {
+        System.out.println("match");
+        Set<Integer> sits = new HashSet<>();
         Stack<Character> characterStack = new Stack<>();
         Stack<Set<State>> aheadStack = new Stack<>();
         Set<State> states = getNILStates(start);
         if(isAhead(states)){
             aheadStack.push(states);
+            sits.add(-1);
         }
         char[] chars = s.toCharArray();
         for (int i = 0; i < chars.length; i++) {
@@ -372,20 +377,26 @@ public class NFA {
             states = getNILStates(move(states, chars[i]));
             if(isAhead(states)){
                 aheadStack.push(states);
+                sits.add(i);
             }
             if (i == chars.length - 1) {
                 if (isFinal(states)) {
                     if(aheadStack.isEmpty()){
                         return s;
                     }else {
+                        int j = i + 1;
                         System.out.println("ahead");
                         System.out.println(aheadStack);
                         Set<State> ahead = aheadStack.pop();
+                        Set<CharSet> charSets = getDirectBeforeTranslation(getAheads(ahead));
+                        System.out.println(charSets);
                         while(!characterStack.isEmpty()){
                             char c = characterStack.pop();
-                            System.out.println(c);
-                            if(aheadContains(ahead, c)){
-                                return stackToString(characterStack, c);
+                            j--;
+                            if(contains(charSets, c) && sits.contains(j)){
+                                System.out.println("ahead match");
+                                System.out.println(j);
+                                return s.substring(0, j+1);
                             }
                         }
                     }
@@ -397,34 +408,35 @@ public class NFA {
         return "";
     }
 
-//问题：states不是该状态所属的状态列表，并且没有考虑到空跳的情况
-    private void setAHead(State target){
-        for(State state : states){
-            if(state.getTarget() == target){
-                target.setAheadCharSet(state.getTransition());
-                return;
-            }
-        }
-    }
-
-    private String stackToString(Stack<Character> stack, char... chars){
-        StringBuilder sb = new StringBuilder();
-        for(char c : stack){
-            sb.append(c);
-        }
-        for(char c : chars){
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-
-    private boolean aheadContains(Set<State> states, char c){
-        for(State state : states){
-            if(state.aheadCharSetContains(c)){
+    private boolean contains(Set<CharSet> charSets, char c) {
+        for (CharSet charSet : charSets) {
+            if (charSet.contains(c)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private Set<CharSet> getDirectTranslation(State state){
+        Set<CharSet> charSets = new HashSet<>();
+        for(State s : states){
+            if(s.getTarget() == state){
+                charSets.addAll(s.getTransition());
+            }
+
+            if(s.getEpsilon().contains(state)){
+                charSets.addAll(Objects.requireNonNull(getDirectTranslation(s)));
+            }
+        }
+        return charSets;
+    }
+
+    private Set<CharSet> getDirectBeforeTranslation(Set<State> states){
+        Set<CharSet> charSets = new HashSet<>();
+        for(State state : states){
+            charSets.addAll(getDirectTranslation(state));
+        }
+        return charSets;
     }
 
     @Override
@@ -439,7 +451,7 @@ public class NFA {
 
 
     public static void main(String[] args) {
-        NFA nfa = new NFA("a/b");
-        System.out.println(nfa.match("ab"));
+        NFA nfa = new NFA("a(a/b)a");
+        System.out.println(nfa.match("aab"));
     }
 }

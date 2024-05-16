@@ -26,18 +26,6 @@ public class CharSet {
         chars.add(c);
     }
 
-    public CharSet(char c1, char c2) {
-        if (c1 > c2) {
-            char temp = c1;
-            c1 = c2;
-            c2 = temp;
-        }
-
-        for (char i = c1; i <= c2; i++) {
-            chars.add(i);
-        }
-    }
-
 
     public boolean contains(char c) {
         for (char aChar : chars) {
@@ -61,21 +49,9 @@ public class CharSet {
         chars.add(c);
     }
 
-    public void addCharSet(CharSet charSet) {
-        chars.addAll(charSet.chars);
-    }
-
-    public void removeChar(char c) {
-        chars.remove(c);
-    }
-
-    public void removeCharSet(CharSet charSet) {
-        chars.removeAll(charSet.chars);
-    }
-
     //并集
     public CharSet union(CharSet charSet) {
-        if (charSet == null) {
+        if (charSet == null || charSet.isEmpty()) {
             return this;
         }
         CharSet result = new CharSet(false);
@@ -101,22 +77,6 @@ public class CharSet {
         for (char aChar : chars) {
             if (!charSet.contains(aChar)) {
                 result.addChar(aChar);
-            }
-        }
-        return result;
-    }
-
-    public void clear() {
-        chars.clear();
-    }
-
-    //补集
-    public CharSet complement() {
-        CharSet result = new CharSet(false);
-        for (int i = 0; i < 128; i++) {
-            char c = (char) i;
-            if (!contains(c)) {
-                result.addChar(c);
             }
         }
         return result;
@@ -159,7 +119,6 @@ public class CharSet {
 
         return charArray;
     }
-
 
     @Override
     public int hashCode() {

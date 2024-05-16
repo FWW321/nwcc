@@ -10,8 +10,6 @@ public class State {
 
     private State target;
 
-    private Set<CharSet> aheadCharSet;
-
     Set<State> epsilon = new HashSet<>();
 
     public void setType(StateType type) {
@@ -26,16 +24,8 @@ public class State {
         this.transition = transition;
     }
 
-    public void clearTransition() {
-        transition.clear();
-    }
-
     public Set<CharSet> getTransition() {
         return transition;
-    }
-
-    public void setAheadCharSet(Set<CharSet> aheadCharSet) {
-        this.aheadCharSet = aheadCharSet;
     }
 
     public void addTransition(CharSet charSet, State target) {
@@ -43,21 +33,8 @@ public class State {
         this.target = target;
     }
 
-    public void addTransition(CharSet charSet) {
-        transition.add(charSet);
-    }
-
-    public void addTransition(char c, State target) {
-        transition.add(new CharSet(c));
-        this.target = target;
-    }
-
     public void addEpsilon(State state) {
         epsilon.add(state);
-    }
-
-    public void addEpsilon(Set<State> states) {
-        epsilon.addAll(states);
     }
 
     public Set<State> getEpsilon() {
@@ -73,56 +50,7 @@ public class State {
         return false;
     }
 
-    public boolean contains(CharSet charSet) {
-        for(CharSet set : transition) {
-            if(set.contains(charSet)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean contains(char[] chars) {
-        for(char c : chars) {
-            if(contains(c)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean aheadCharSetContains(char c) {
-        for(CharSet charSet : aheadCharSet) {
-            if(charSet.contains(c)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public State getTarget() {
         return target;
     }
-
-    public Set<State> getTarget(CharSet charSet) {
-        Set<State> states = new HashSet<>();
-        for(CharSet set : transition) {
-            if(set.contains(charSet)) {
-                states.add(target);
-            }
-        }
-        return states;
-    }
-
-
-
-//    @Override
-//    public String toString() {
-//        return "State{" +
-//                "type=" + type +
-//                ", transition=" + transition +
-//                ", target=" + target +
-//                ", epsilon=" + epsilon +
-//                '}';
-//    }
 }
