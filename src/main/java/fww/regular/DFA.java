@@ -9,7 +9,7 @@ import static fww.regular.NFA.contains;
 public class DFA {
     private int line = 1;
 
-    private Set<CharSet> alphabet = new HashSet<>();
+    private Set<CharSet> alphabet;
 
     private Set<DState> states = new HashSet<>();
 
@@ -30,8 +30,6 @@ public class DFA {
         start = new DState(s);
         states.add(start);
         while ((s = minus(D, T)) != null) {
-            System.out.println("while");
-            System.out.println(states);
             T.add(s);
             DState t = getEqualState(new DState(s));
             states.add(t);
@@ -66,16 +64,6 @@ public class DFA {
         return d;
     }
 
-    private DFA success(String s) {
-        actionProxy.success(s);
-        return this;
-    }
-
-    private DFA failed(int line) {
-        actionProxy.failed(line);
-        return this;
-    }
-
     public boolean isFinal(DState dState) {
         return dState.isFinal();
     }
@@ -83,6 +71,8 @@ public class DFA {
     public boolean isAhead(DState dState) {
         return dState.isAhead();
     }
+
+
 
     public String match(String s) {
         String result = null;
@@ -104,7 +94,6 @@ public class DFA {
             dState = dState.getTarge(chars[i]);
             System.out.println(chars[i]);
             if(dState == null){
-                System.out.println("dState is null");
                 break;
             }
             if (isAhead(dState)) {
@@ -133,16 +122,16 @@ public class DFA {
             }
         }
         if (result == null) {
-            failed(line);
+            actionProxy.failed(s, line);
         } else {
-            success(result);
+            actionProxy.success(result, line);
         }
         return result;
     }
 
     public static void main(String[] args) {
-        DFA dfa = new DFA("(a/b)|(c/d)");
-        System.out.println(dfa.match("cd"));
+        DFA dfa = new DFA("ab");
+        System.out.println(dfa.match("ab"));
     }
 }
 

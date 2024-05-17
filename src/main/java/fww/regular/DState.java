@@ -42,10 +42,6 @@ public class DState {
         return stateType == StateType.AHEAD || stateType == StateType.AHEAD_FINAL;
     }
 
-    public DState getTarge(CharSet charSet) {
-        return transition.get(charSet);
-    }
-
     public DState getTarge(char c) {
         for(CharSet charSet : transition.keySet()) {
             if(charSet.contains(c)) {

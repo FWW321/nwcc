@@ -2,5 +2,5 @@ package fww.regular.Interface;
 
 @FunctionalInterface
 public interface FailedFunction {
-    void failed(int line);
+    void failed(String s, int line);
 }

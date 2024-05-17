@@ -462,64 +462,43 @@ public class NFA {
             }
         }
         if(result == null){
-            actionProxy.failed(line);
+            actionProxy.failed(s, line);
         }else {
-            actionProxy.success(result);
+            actionProxy.success(result, line);
         }
         return result;
     }
 
-    static public boolean contains(Set<CharSet> charSets, char c) {
-        if(charSets == null){
-            return false;
-        }
-        for (CharSet charSet : charSets) {
-            if (charSet.contains(c)) {
-                return true;
-            }
-        }
-        return false;
+    public static boolean contains(Set<CharSet> charSets, char c) {
+        return charSets != null && charSets.stream().anyMatch(charSet -> charSet.contains(c));
     }
 
-    private Set<CharSet> getDirectTranslation(NState NState){
+
+    private Set<CharSet> getDirectTranslation(NState NState) {
         Set<CharSet> charSets = new HashSet<>();
-        for(NState s : NStates){
-            if(s.getTarget() == NState){
+        for (NState s : NStates) {
+            if (s.getTarget() == NState) {
                 charSets.addAll(s.getTransition());
-                System.out.println("getDirectTranslation");
-                System.out.println(s.getTransition());
             }
 
-            if(s.getEpsilon().contains(NState)){
-                charSets.addAll(Objects.requireNonNull(getDirectTranslation(s)));
+            if (s.getEpsilon().contains(NState)) {
+                charSets.addAll(getDirectTranslation(s));
             }
         }
         return charSets;
     }
 
-    static public Set<CharSet> getAheadCharSet(Set<NState> NStates){
+
+    static public Set<CharSet> getAheadCharSet(Set<NState> NStates) {
         Set<CharSet> charSets = new HashSet<>();
-        for(NState NState : NStates){
-            if(NState.getType() == StateType.AHEAD || NState.getType() == StateType.AHEAD_FINAL){
-                charSets.addAll(NState.getAheadCharSet());
-                System.out.println("getAheadCharSet");
-                System.out.println(NState.getAheadCharSet());
+        for (NState nState : NStates) {
+            if (nState.getType() == StateType.AHEAD || nState.getType() == StateType.AHEAD_FINAL) {
+                charSets.addAll(nState.getAheadCharSet());
             }
-//            charSets.addAll(NState.getAheadCharSet());
         }
-        if(charSets.isEmpty()){
-            return null;
-        }
-        return charSets;
+        return charSets.isEmpty() ? null : charSets;
     }
 
-    private Set<CharSet> getDirectTranslation(Set<NState> NStates){
-        Set<CharSet> charSets = new HashSet<>();
-        for(NState NState : NStates){
-            charSets.addAll(getDirectTranslation(NState));
-        }
-        return charSets;
-    }
 
     static public String match(String regex, NFA... nfas) {
         for(NFA nfa : nfas){
@@ -554,6 +533,6 @@ public class NFA {
 
     public static void main(String[] args) {
         NFA nfa = new NFA("ab");
-        System.out.println(nfa.match("a"));
+        System.out.println(nfa.match("ab"));
     }
 }

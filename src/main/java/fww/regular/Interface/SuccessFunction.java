@@ -2,5 +2,5 @@ package fww.regular.Interface;
 
 @FunctionalInterface
 public interface SuccessFunction {
-    void success(String message);
+    void success(String result, int line);
 }

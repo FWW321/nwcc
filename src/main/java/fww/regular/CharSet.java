@@ -36,15 +36,6 @@ public class CharSet {
         return false;
     }
 
-    public boolean contains(CharSet charSet) {
-        for (char aChar : charSet.chars) {
-            if (!contains(aChar)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public void addChar(char c) {
         chars.add(c);
     }

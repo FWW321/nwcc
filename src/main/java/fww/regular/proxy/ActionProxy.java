@@ -17,16 +17,15 @@ public class ActionProxy {
         return this;
     }
 
-    public void success(String s) {
+    public void success(String result, int line) {
         if(successFunction != null){
-            successFunction.success(s);
-
+            successFunction.success(result, line);
         }
     }
 
-    public void failed(int line) {
+    public void failed(String s, int line) {
         if(failedFunction != null){
-            failedFunction.failed(line);
+            failedFunction.failed(s, line);
         }
     }
 }
