@@ -6,7 +6,7 @@ import java.util.Set;
 public class NState {
     private static int idCounter = 0;
 
-    private int id;
+    private final int id;
 
     private StateType type = StateType.NORMAL;
 
@@ -55,14 +55,19 @@ public class NState {
         return epsilon;
     }
 
-    public boolean contains(char c) {
-        for(CharSet charSet : transition) {
-            if(charSet.contains(c)) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    public boolean contains(char c) {
+//        for(CharSet charSet : transition) {
+//            if(charSet.contains(c)) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
+
+public boolean contains(char c) {
+    return transition.stream().anyMatch(charSet -> charSet.contains(c));
+}
+
 
     public NState getTarget() {
         return target;
