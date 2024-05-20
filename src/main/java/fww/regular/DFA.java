@@ -13,16 +13,17 @@ public class DFA {
 
     private final Set<DState> states = new HashSet<>();
 
-    private final DState start;
+    private DState start;
 
-    private final ActionProxy actionProxy;
+    private ActionProxy actionProxy;
 
-    public DFA(String regex){
+    public DFA(String regex) {
         this(new NFA(regex));
     }
+
     public DFA(NFA nfa) {
         alphabet = nfa.getAlphabet();
-        actionProxy = nfa.getActionProxy();;
+//        actionProxy = nfa.getActionProxy();
         Set<Set<NState>> D = new HashSet<>();
         Set<Set<NState>> T = new HashSet<>();
         Set<NState> s = nfa.getNILStates(nfa.getStart());
@@ -83,7 +84,36 @@ public class DFA {
         return dState.isAhead();
     }
 
-    private void minimization() {
+    public Set<DState> getContainSet(Set<Set<DState>> P, DState d) {
+        for (Set<DState> set : P) {
+            if (set.contains(d)) {
+                return set;
+            }
+        }
+        return null;
+    }
+
+
+    public void minSelf(Set<Set<DState>> P) {
+        this.start = DState.getDState(getContainSet(P, start));
+        this.states.clear();
+        for (Set<DState> set : P) {
+            states.add(DState.getDState(set));
+        }
+        minCharSet();
+    }
+
+    public boolean putTargetMap(Map<Set<DState>, Set<DState>> map, DState d, Set<DState> target) {
+        for (Set<DState> set : map.keySet()) {
+            if (map.get(set) == target) {
+                set.add(d);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private DFA minimization() {
         Set<Set<DState>> P = new HashSet<>();
         Set<DState> F = new HashSet<>();
         Set<DState> N = new HashSet<>();
@@ -96,121 +126,179 @@ public class DFA {
         }
         P.add(F);
         P.add(N);
-        boolean flag = true;
-        while(flag){
-            flag = false;
-            Map<Set<DState>, Set<DState>> map = new HashMap<>();
-            for(Set<DState> set : P){
-                for(DState state : set){
-                    Set<DState> key = new HashSet<>();
-                    for(CharSet c : alphabet){
-                        DState target = state.getTarge(c);
-                        if(target != null){
-                            key.add(target);
+        Set<Set<DState>> R = new HashSet<>();
+        while (!P.isEmpty()) {
+            Set<DState> set = P.iterator().next();
+            P.remove(set);
+            Set<Set<DState>> T = new HashSet<>();
+            T.addAll(P);
+            T.addAll(R);
+            T.add(set);
+            boolean flag = true;
+            while (flag) {
+                System.out.println(flag);
+                flag = false;
+                Map<Set<DState>, Set<DState>> map = new HashMap<>();
+                for (CharSet c : alphabet) {
+                    if (set.size() <= 1) {
+                        break;
+                    }
+                    System.out.println(c);
+                    Iterator<DState> iterator = set.iterator();
+                    DState d = iterator.next();
+                    Set<DState> target = getContainSet(T, d.getTarge(c));
+                    map.put(set, target);
+
+                    while (iterator.hasNext()) {
+                        DState state = iterator.next();
+                        target = getContainSet(T, state.getTarge(c));
+                        if (!putTargetMap(map, state, target)) {
+                            flag = true;
+                            Set<DState> other = new HashSet<>();
+                            other.add(state);
+                            map.put(other, target);
+                            P.add(other);
+                            iterator.remove();
                         }
                     }
-                    if(!map.containsKey(key)){
-                        map.put(key, new HashSet<>());
-                    }
-                    map.get(key).add(state);
+                }
+                if (set.size() <= 1) {
+                    break;
+                }
+            }
+            if (!set.isEmpty()) {
+                R.add(set);
+            }
+//            P.remove(set); set最开始的hashcode为1076,所以在set中的位置也是"1076",后来虽然set的hashcode变为了994,但是在P中的位置还是"1076"，所以remove不掉
+        }
+        minSelf(R);
+        return this;
+    }
+
+    private boolean MinCharSetHelper(Set<DState> states, CharSet c1, CharSet c2){
+        Set<DState> result1 = new HashSet<>();
+        Set<DState> result2 = new HashSet<>();
+        for(DState dState : states){
+            result1.add(dState.getTarge(c1));
+            result2.add(dState.getTarge(c2));
+        }
+        if(result1.equals(result2)){
+            return true;
+        }
+        return false;
+    }
+
+    private void minCharSet(){
+        Set<CharSet> remove = new HashSet<>();
+        Set<CharSet> add = new HashSet<>();
+        for(CharSet c1 : alphabet){
+            for(CharSet c2 : alphabet){
+                if(MinCharSetHelper(states, c1, c2)){
+                   remove.add(c1);
+                   remove.add(c2);
+                   add.add(c1.union(c2));
                 }
             }
         }
+        alphabet.removeAll(remove);
+        alphabet.addAll(add);
     }
 
     //TODO:1
-//    public String match(String s) {
+    public String match(String s) {
+        String result = null;
+        Set<Integer> aheadSits = new HashSet<>();
+        int finalSit = -2;
+        Stack<Character> characterStack = new Stack<>();
+        Stack<DState> aheadStack = new Stack<>();
+        Stack<DState> finalStack = new Stack<>();
+        DState dState = start;
+        if (isAhead(dState)) {
+            aheadStack.push(dState);
+            aheadSits.add(-1);
+            if(isFinal(dState)){
+                finalStack.push(dState);
+                finalSit = -1;
+            }
+        }
+        char[] chars = s.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] == '\n') {
+                line++;
+            }
+            characterStack.push(chars[i]);
+            dState = dState.getTarge(chars[i]);
+            if (dState != null && isAhead(dState)) {
+                aheadStack.push(dState);
+                aheadSits.add(i);
+            }
+            if (dState != null && isFinal(dState)) {
+                finalStack.push(dState);
+                finalSit = i;
+            }
+            if (dState == null || i == chars.length -1) {
+                System.out.println("final");
+                System.out.println(finalSit);
+                System.out.println(finalStack);
+                if(!finalStack.isEmpty()){
+                    if (aheadStack.isEmpty()) {
+                        result = s.substring(0, finalSit + 1);
+                    } else {
+                        int j = finalSit + 1;
+                        DState ahead = aheadStack.pop();
+                        Set<CharSet> charSets = ahead.getAheadCharSet();
+                        while (!characterStack.isEmpty()) {
+                            char c = characterStack.pop();
+                            j--;
+                            if (contains(charSets, c) && aheadSits.contains(j)) {
+                                result = s.substring(0, finalSit + 1);
+                            }
+                        }
+                    }
+                }
+                return result;
+            }
+        }
+        return null;
+    }
+
+    //TODO:1
+//    public String match(String input) {
 //        String result = null;
-//        Set<Integer> sits = new HashSet<>();
-//        Stack<Character> characterStack = new Stack<>();
-//        Stack<DState> aheadStack = new Stack<>();
-//        DState dState = start;
-//        if (isAhead(dState)) {
-//            aheadStack.push(dState);
-//            sits.add(-1);
-//        }
-//        char[] chars = s.toCharArray();
-//        for (int i = 0; i < chars.length; i++) {
-//            if (chars[i] == '\n') {
+//        Set<Integer> sitSet = new HashSet<>();
+//        Deque<DState> aheadStack = new ArrayDeque<>();
+//        DState currentState = start;
+//
+//        for (int i = 0; i < input.length(); i++) {
+//            char currentChar = input.charAt(i);
+//            if (currentChar == '\n') {
 //                line++;
 //            }
-//            characterStack.push(chars[i]);
-//            System.out.println(dState);
-//            dState = dState.getTarge(chars[i]);
-//            System.out.println(chars[i]);
-//            if(dState == null){
+//
+//            currentState = updateState(currentState, currentChar);
+//            if (currentState == null) {
 //                break;
 //            }
-//            if (isAhead(dState)) {
-//                aheadStack.push(dState);
-//                sits.add(i);
+//
+//            if (isAhead(currentState, aheadStack)) {
+//                aheadStack.push(currentState);
+//                sitSet.add(i);
 //            }
-//            if (i == chars.length - 1) {
-//                if (isFinal(dState)) {
-//                    if (aheadStack.isEmpty()) {
-//                        result = s;
-//                    } else {
-//                        int j = i + 1;
-//                        DState ahead = aheadStack.pop();
-//                        Set<CharSet> charSets = ahead.getAheadCharSet();
-//                        while (!characterStack.isEmpty()) {
-//                            char c = characterStack.pop();
-//                            j--;
-//                            if (contains(charSets, c) && sits.contains(j)) {
-//                                result = s.substring(0, j + 1);
-//                            }
-//                        }
-//                    }
-//                } else {
-//                    result = null;
-//                }
+//
+//            if (i == input.length() - 1 && isFinal(currentState)) {
+//                result = computeResult(input, aheadStack, sitSet, i);
+//                break;
 //            }
 //        }
+//
 //        if (result == null) {
-//            actionProxy.failed(s, line);
+//            actionProxy.failed(input, line);
 //        } else {
 //            actionProxy.success(result, line);
 //        }
+//
 //        return result;
 //    }
-
-    //TODO:1
-    public String match(String input) {
-        String result = null;
-        Set<Integer> sitSet = new HashSet<>();
-        Deque<DState> aheadStack = new ArrayDeque<>();
-        DState currentState = start;
-
-        for (int i = 0; i < input.length(); i++) {
-            char currentChar = input.charAt(i);
-            if (currentChar == '\n') {
-                line++;
-            }
-
-            currentState = updateState(currentState, currentChar);
-            if (currentState == null) {
-                break;
-            }
-
-            if (isAhead(currentState, aheadStack)) {
-                aheadStack.push(currentState);
-                sitSet.add(i);
-            }
-
-            if (i == input.length() - 1 && isFinal(currentState)) {
-                result = computeResult(input, aheadStack, sitSet, i);
-                break;
-            }
-        }
-
-        if (result == null) {
-            actionProxy.failed(input, line);
-        } else {
-            actionProxy.success(result, line);
-        }
-
-        return result;
-    }
 
     private DState updateState(DState currentState, char currentChar) {
         System.out.println(currentState);
@@ -237,8 +325,8 @@ public class DFA {
     }
 
     public static void main(String[] args) {
-        DFA dfa = new DFA("a/b");
-        System.out.println(dfa.match("ab"));
+        DFA dfa = new DFA("a*b").minimization();
+        System.out.println(dfa.match(""));
     }
 }
 

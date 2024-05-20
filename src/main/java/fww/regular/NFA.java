@@ -18,8 +18,6 @@ public class NFA {
 
     private Set<NState> NStates = new HashSet<>();
 
-    private final ActionProxy actionProxy = new ActionProxy();
-
     private NFA() {
         alphabet.add(new CharSet(true));
     }
@@ -30,6 +28,25 @@ public class NFA {
         this.start = nfa.start;
         this.end = nfa.end;
         this.NStates = nfa.NStates;
+    }
+
+    public NFA(String regex, SuccessFunction successFunction) {
+        this(regex);
+        this.end.InitActionProxy();
+        this.end.getActionProxy().onSuccess(successFunction);
+    }
+
+    public NFA(String regex, FailedFunction failedFunction) {
+        this(regex);
+        this.end.InitActionProxy();
+        this.end.getActionProxy().onFailed(failedFunction);
+    }
+
+    public NFA(String regex, SuccessFunction successFunction, FailedFunction failedFunction) {
+        this(regex);
+        this.end.InitActionProxy();
+        this.end.getActionProxy().onSuccess(successFunction);
+        this.end.getActionProxy().onFailed(failedFunction);
     }
 
     public Set<CharSet> getAlphabet() {
@@ -112,17 +129,6 @@ public class NFA {
         newCharSets.removeIf(CharSet::isEmpty);
         alphabet = newCharSets;
         return cct;
-    }
-
-
-    public NFA onSuccess(SuccessFunction successFunction) {
-        actionProxy.onSuccess(successFunction);
-        return this;
-    }
-
-    public NFA onFailed(FailedFunction failedFunction) {
-        actionProxy.onFailed(failedFunction);
-        return this;
     }
 
     public void updateStates(CharSet cc, CharSet cc1, CharSet cc2) {
@@ -223,7 +229,10 @@ public class NFA {
                     break;
                 case '[':
                     int k = regex.indexOf(']', i);
-                    stack.push(charClassRule(regex.substring(i + 1, k)));
+                    if(regex.substring(i + 1, k).charAt(0) == '^')
+                        stack.push(notCharClassRule(regex.substring(i + 2, k)));
+                    else
+                        stack.push(charClassRule(regex.substring(i + 1, k)));
                     i = k + 1;
                     break;
                 case '|':
@@ -294,183 +303,12 @@ public class NFA {
 
 
     //TODO:6
-//    private NFA baseRule(char c) {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addTransition(new CharSet(c), end);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    private NFA orRule(NFA s, NFA t) {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addEpsilon(s.start);
-//        start.addEpsilon(t.start);
-//        s.end.addEpsilon(end);
-//        t.end.addEpsilon(end);
-//        s.end.setType(StateType.NORMAL);
-//        t.end.setType(StateType.NORMAL);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.addAllState(s.NStates);
-//        nfa.addAllState(t.NStates);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    private NFA concatRule(NFA s, NFA t) {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addEpsilon(s.start);
-//        s.end.addEpsilon(t.start);
-//        t.end.addEpsilon(end);
-//        s.end.setType(StateType.NORMAL);
-//        t.end.setType(StateType.NORMAL);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.addAllState(s.NStates);
-//        nfa.addAllState(t.NStates);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    private NFA starRule(NFA n) {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addEpsilon(n.start);
-//        start.addEpsilon(end);
-//        n.end.addEpsilon(n.start);
-//        n.end.addEpsilon(end);
-//        n.end.setType(StateType.NORMAL);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.addAllState(n.NStates);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    private NFA plusRule(NFA n) {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addEpsilon(n.start);
-//        n.end.addEpsilon(end);
-//        n.end.addEpsilon(n.start);
-//        n.end.setType(StateType.NORMAL);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.addAllState(n.NStates);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    private NFA questionRule(NFA n) {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addEpsilon(n.start);
-//        start.addEpsilon(end);
-//        n.end.addEpsilon(end);
-//        n.end.setType(StateType.NORMAL);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.addAllState(n.NStates);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    private NFA dotRule() {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addTransition(new CharSet(true), end);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    private NFA charClassRule(String regex) {
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        CharSet charSet = new CharSet(CharSet.charGroupToArray(regex));
-//        start.addTransition(charSet, end);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.start = start;
-//        nfa.end = end;
-//        return nfa;
-//    }
-//
-//    //TODO: 该向前看运算符不能识别a/b，当a变长时，a的后缀与b的前缀有公共部分的情况
-//    private NFA lookaheadRule(NFA s, NFA t){
-//        System.out.println("lookahead");
-//        NFA nfa = new NFA();
-//        NState start = new NState();
-//        NState end = new NState();
-//        end.setType(StateType.FINAL);
-//        start.addEpsilon(s.start);
-//        s.end.addEpsilon(t.start);
-//        t.end.addEpsilon(end);
-//        t.end.setType(StateType.NORMAL);
-//        nfa.addState(start);
-//        nfa.addState(end);
-//        nfa.addAllState(s.NStates);
-//        nfa.addAllState(t.NStates);
-//        nfa.start = start;
-//        nfa.end = end;
-//        s.end.AHEADInit(nfa.getDirectTranslation(s.end));
-//        return nfa;
-//    }
-//
-//    private NFA sRule(){
-//        return builder("( |\t|\n|\r)*");
-//    }
-
-
-    //TODO:6
     private NFA baseRule(char c) {
-        return createSimpleNFA(new CharSet(c));
-    }
-
-    private NFA dotRule() {
-        return createSimpleNFA(new CharSet(true));
-    }
-
-    private NFA charClassRule(String regex) {
-        CharSet charSet = new CharSet(CharSet.charGroupToArray(regex));
-        return createSimpleNFA(charSet);
-    }
-
-    private NFA createSimpleNFA(CharSet charSet) {
         NFA nfa = new NFA();
         NState start = new NState();
         NState end = new NState();
         end.setType(StateType.FINAL);
-        start.addTransition(charSet, end);
+        start.addTransition(new CharSet(c), end);
         nfa.addState(start);
         nfa.addState(end);
         nfa.start = start;
@@ -479,69 +317,16 @@ public class NFA {
     }
 
     private NFA orRule(NFA s, NFA t) {
-        return combineNFAs(s, t, true);
-    }
-
-    private NFA concatRule(NFA s, NFA t) {
-        return combineNFAs(s, t, false);
-    }
-
-    private NFA starRule(NFA n) {
-        return applyQuantifier(n, true, true);
-    }
-
-    private NFA plusRule(NFA n) {
-        return applyQuantifier(n, true, false);
-    }
-
-    private NFA questionRule(NFA n) {
-        return applyQuantifier(n, false, true);
-    }
-
-    private NFA applyQuantifier(NFA n, boolean startEpsilon, boolean endEpsilon) {
         NFA nfa = new NFA();
         NState start = new NState();
         NState end = new NState();
         end.setType(StateType.FINAL);
-
-        if (startEpsilon) {
-            start.addEpsilon(n.start);
-        }
-        if (endEpsilon) {
-            start.addEpsilon(end);
-        }
-        n.end.addEpsilon(end);
-        if (!endEpsilon) {
-            n.end.addEpsilon(n.start);
-        }
-        n.end.setType(StateType.NORMAL);
-        nfa.addState(start);
-        nfa.addState(end);
-        nfa.addAllState(n.NStates);
-        nfa.start = start;
-        nfa.end = end;
-        return nfa;
-    }
-
-    private NFA combineNFAs(NFA s, NFA t, boolean isOrRule) {
-        NFA nfa = new NFA();
-        NState start = new NState();
-        NState end = new NState();
-        end.setType(StateType.FINAL);
-
-        if (isOrRule) {
-            start.addEpsilon(s.start);
-            start.addEpsilon(t.start);
-        } else {
-            start.addEpsilon(s.start);
-            s.end.addEpsilon(t.start);
-        }
-
+        start.addEpsilon(s.start);
+        start.addEpsilon(t.start);
         s.end.addEpsilon(end);
         t.end.addEpsilon(end);
         s.end.setType(StateType.NORMAL);
         t.end.setType(StateType.NORMAL);
-
         nfa.addState(start);
         nfa.addState(end);
         nfa.addAllState(s.NStates);
@@ -551,7 +336,123 @@ public class NFA {
         return nfa;
     }
 
-    private NFA lookaheadRule(NFA s, NFA t) {
+    private NFA concatRule(NFA s, NFA t) {
+        NFA nfa = new NFA();
+        NState start = new NState();
+        NState end = new NState();
+        end.setType(StateType.FINAL);
+        start.addEpsilon(s.start);
+        s.end.addEpsilon(t.start);
+        t.end.addEpsilon(end);
+        s.end.setType(StateType.NORMAL);
+        t.end.setType(StateType.NORMAL);
+        nfa.addState(start);
+        nfa.addState(end);
+        nfa.addAllState(s.NStates);
+        nfa.addAllState(t.NStates);
+        nfa.start = start;
+        nfa.end = end;
+        return nfa;
+    }
+
+    private NFA starRule(NFA n) {
+        NFA nfa = new NFA();
+        NState start = new NState();
+        NState end = new NState();
+        end.setType(StateType.FINAL);
+        start.addEpsilon(n.start);
+        start.addEpsilon(end);
+        n.end.addEpsilon(n.start);
+        n.end.addEpsilon(end);
+        n.end.setType(StateType.NORMAL);
+        nfa.addState(start);
+        nfa.addState(end);
+        nfa.addAllState(n.NStates);
+        nfa.start = start;
+        nfa.end = end;
+        return nfa;
+    }
+
+    private NFA plusRule(NFA n) {
+        NFA nfa = new NFA();
+        NState start = new NState();
+        NState end = new NState();
+        end.setType(StateType.FINAL);
+        start.addEpsilon(n.start);
+        n.end.addEpsilon(end);
+        n.end.addEpsilon(n.start);
+        n.end.setType(StateType.NORMAL);
+        nfa.addState(start);
+        nfa.addState(end);
+        nfa.addAllState(n.NStates);
+        nfa.start = start;
+        nfa.end = end;
+        return nfa;
+    }
+
+    private NFA questionRule(NFA n) {
+        NFA nfa = new NFA();
+        NState start = new NState();
+        NState end = new NState();
+        end.setType(StateType.FINAL);
+        start.addEpsilon(n.start);
+        start.addEpsilon(end);
+        n.end.addEpsilon(end);
+        n.end.setType(StateType.NORMAL);
+        nfa.addState(start);
+        nfa.addState(end);
+        nfa.addAllState(n.NStates);
+        nfa.start = start;
+        nfa.end = end;
+        return nfa;
+    }
+
+    private NFA dotRule() {
+        NFA nfa = new NFA();
+        NState start = new NState();
+        NState end = new NState();
+        end.setType(StateType.FINAL);
+        start.addTransition(new CharSet(true), end);
+        nfa.addState(start);
+        nfa.addState(end);
+        nfa.start = start;
+        nfa.end = end;
+        return nfa;
+    }
+
+    private NFA charClassRule(String regex) {
+        NFA nfa = new NFA();
+        NState start = new NState();
+        NState end = new NState();
+        end.setType(StateType.FINAL);
+        CharSet charSet = new CharSet(CharSet.charGroupToArray(regex));
+        start.addTransition(charSet, end);
+        nfa.addState(start);
+        nfa.addState(end);
+        nfa.start = start;
+        nfa.end = end;
+        return nfa;
+    }
+
+    private NFA notCharClassRule(String regex){
+        NFA nfa = new NFA();
+        NState start = new NState();
+        NState end = new NState();
+        end.setType(StateType.FINAL);
+        CharSet charSet = new CharSet(CharSet.charGroupToArray(regex));
+        CharSet U = new CharSet(true);
+        charSet = U.minus(charSet);
+        start.addTransition(charSet, end);
+        nfa.addState(start);
+        nfa.addState(end);
+        nfa.start = start;
+        nfa.end = end;
+        return nfa;
+    }
+
+    //TODO: 该向前看运算符不能识别a/b，当a变长时，a的后缀与b的前缀有公共部分的情况
+    private NFA lookaheadRule(NFA s, NFA t){
+        System.out.println("lookahead");
         NFA nfa = new NFA();
         NState start = new NState();
         NState end = new NState();
@@ -570,13 +471,133 @@ public class NFA {
         return nfa;
     }
 
-    private NFA sRule() {
+    private NFA sRule(){
         return builder("( |\t|\n|\r)*");
     }
 
-    public ActionProxy getActionProxy() {
-        return actionProxy;
-    }
+
+    //TODO:6
+//    private NFA baseRule(char c) {
+//        return createSimpleNFA(new CharSet(c));
+//    }
+//
+//    private NFA dotRule() {
+//        return createSimpleNFA(new CharSet(true));
+//    }
+//
+//    private NFA charClassRule(String regex) {
+//        CharSet charSet = new CharSet(CharSet.charGroupToArray(regex));
+//        return createSimpleNFA(charSet);
+//    }
+//
+//    private NFA createSimpleNFA(CharSet charSet) {
+//        NFA nfa = new NFA();
+//        NState start = new NState();
+//        NState end = new NState();
+//        end.setType(StateType.FINAL);
+//        start.addTransition(charSet, end);
+//        nfa.addState(start);
+//        nfa.addState(end);
+//        nfa.start = start;
+//        nfa.end = end;
+//        return nfa;
+//    }
+//
+//    private NFA orRule(NFA s, NFA t) {
+//        return combineNFAs(s, t, true);
+//    }
+//
+//    private NFA concatRule(NFA s, NFA t) {
+//        return combineNFAs(s, t, false);
+//    }
+//
+//    private NFA starRule(NFA n) {
+//        return applyQuantifier(n, true, true);
+//    }
+//
+//    private NFA plusRule(NFA n) {
+//        return applyQuantifier(n, true, false);
+//    }
+//
+//    private NFA questionRule(NFA n) {
+//        return applyQuantifier(n, false, true);
+//    }
+//
+//    private NFA applyQuantifier(NFA n, boolean startEpsilon, boolean endEpsilon) {
+//        NFA nfa = new NFA();
+//        NState start = new NState();
+//        NState end = new NState();
+//        end.setType(StateType.FINAL);
+//
+//        if (startEpsilon) {
+//            start.addEpsilon(n.start);
+//        }
+//        if (endEpsilon) {
+//            start.addEpsilon(end);
+//        }
+//        n.end.addEpsilon(end);
+//        if (!endEpsilon) {
+//            n.end.addEpsilon(n.start);
+//        }
+//        n.end.setType(StateType.NORMAL);
+//        nfa.addState(start);
+//        nfa.addState(end);
+//        nfa.addAllState(n.NStates);
+//        nfa.start = start;
+//        nfa.end = end;
+//        return nfa;
+//    }
+//
+//    private NFA combineNFAs(NFA s, NFA t, boolean isOrRule) {
+//        NFA nfa = new NFA();
+//        NState start = new NState();
+//        NState end = new NState();
+//        end.setType(StateType.FINAL);
+//
+//        if (isOrRule) {
+//            start.addEpsilon(s.start);
+//            start.addEpsilon(t.start);
+//            s.end.addEpsilon(end);
+//        } else {
+//            start.addEpsilon(s.start);
+//            s.end.addEpsilon(t.start);
+//        }
+//
+//        t.end.addEpsilon(end);
+//        s.end.setType(StateType.NORMAL);
+//        t.end.setType(StateType.NORMAL);
+//
+//        nfa.addState(start);
+//        nfa.addState(end);
+//        nfa.addAllState(s.NStates);
+//        nfa.addAllState(t.NStates);
+//        nfa.start = start;
+//        nfa.end = end;
+//        return nfa;
+//    }
+//
+//    private NFA lookaheadRule(NFA s, NFA t) {
+//        NFA nfa = new NFA();
+//        NState start = new NState();
+//        NState end = new NState();
+//        end.setType(StateType.FINAL);
+//        start.addEpsilon(s.start);
+//        s.end.addEpsilon(t.start);
+//        t.end.addEpsilon(end);
+//        t.end.setType(StateType.NORMAL);
+//        nfa.addState(start);
+//        nfa.addState(end);
+//        nfa.addAllState(s.NStates);
+//        nfa.addAllState(t.NStates);
+//        nfa.start = start;
+//        nfa.end = end;
+//        s.end.AHEADInit(nfa.getDirectTranslation(s.end));
+//        return nfa;
+//    }
+//
+//    private NFA sRule() {
+//        return builder("( |\t|\n|\r)*");
+//    }
 
     //TODO:5
 //    public Set<NState> getNILStates(NState NState) {
@@ -682,58 +703,58 @@ public class NFA {
         return start;
     }
 
-    public String match(String s) {
-        String result = null;
-        Set<Integer> sits = new HashSet<>();
-        Stack<Character> characterStack = new Stack<>();
-        Stack<Set<NState>> aheadStack = new Stack<>();
-        Set<NState> NStates = getNILStates(start);
-
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == '\n') {
-                line++;
-            }
-            characterStack.push(c);
-            NStates = getNILStates(move(NStates, c));
-
-            if (isAhead(NStates)) {
-                aheadStack.push(NStates);
-                sits.add(i);
-            }
-
-            if (i == s.length() - 1) {
-                if (isFinal(NStates)) {
-                    if (aheadStack.isEmpty()) {
-                        result = s;
-                    } else {
-                        int j = i + 1;
-                        Set<NState> ahead = aheadStack.pop();
-                        Set<CharSet> charSets = getAheadCharSet(ahead);
-
-                        StringBuilder sb = new StringBuilder();
-                        while (!characterStack.isEmpty()) {
-                            char ch = characterStack.pop();
-                            j--;
-                            if (contains(charSets, ch) && sits.contains(j)) {
-                                result = sb.insert(0, ch).toString();
-                            }
-                        }
-                    }
-                } else {
-                    result = null;
-                }
-            }
-        }
-
-        if (result == null) {
-            actionProxy.failed(s, line);
-        } else {
-            actionProxy.success(result, line);
-        }
-
-        return result;
-    }
+//    public String match(String s) {
+//        String result = null;
+//        Set<Integer> sits = new HashSet<>();
+//        Stack<Character> characterStack = new Stack<>();
+//        Stack<Set<NState>> aheadStack = new Stack<>();
+//        Set<NState> NStates = getNILStates(start);
+//
+//        for (int i = 0; i < s.length(); i++) {
+//            char c = s.charAt(i);
+//            if (c == '\n') {
+//                line++;
+//            }
+//            characterStack.push(c);
+//            NStates = getNILStates(move(NStates, c));
+//
+//            if (isAhead(NStates)) {
+//                aheadStack.push(NStates);
+//                sits.add(i);
+//            }
+//
+//            if (i == s.length() - 1) {
+//                if (isFinal(NStates)) {
+//                    if (aheadStack.isEmpty()) {
+//                        result = s;
+//                    } else {
+//                        int j = i + 1;
+//                        Set<NState> ahead = aheadStack.pop();
+//                        Set<CharSet> charSets = getAheadCharSet(ahead);
+//
+//                        StringBuilder sb = new StringBuilder();
+//                        while (!characterStack.isEmpty()) {
+//                            char ch = characterStack.pop();
+//                            j--;
+//                            if (contains(charSets, ch) && sits.contains(j)) {
+//                                result = sb.insert(0, ch).toString();
+//                            }
+//                        }
+//                    }
+//                } else {
+//                    result = null;
+//                }
+//            }
+//        }
+//
+//        if (result == null) {
+//            actionProxy.failed(s, line);
+//        } else {
+//            actionProxy.success(result, line);
+//        }
+//
+//        return result;
+//    }
 
 
     public static boolean contains(Set<CharSet> charSets, char c) {
@@ -855,7 +876,7 @@ public class NFA {
 
 
     public static void main(String[] args) {
-        NFA nfa = new NFA("a.b");
-        System.out.println(nfa.match("azb"));
+        NFA nfa = new NFA("a[^b]");
+        System.out.println(nfa.match("ab"));
     }
 }

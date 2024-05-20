@@ -1,5 +1,9 @@
 package fww.regular;
 
+import fww.regular.Interface.FailedFunction;
+import fww.regular.Interface.SuccessFunction;
+import fww.regular.proxy.ActionProxy;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,6 +20,18 @@ public class NState {
 
     private Set<CharSet> aheadCharSet;
 
+    private ActionProxy actionProxy = null;
+
+    private int priority;
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
     Set<NState> epsilon = new HashSet<>();
 
     public NState() {
@@ -24,6 +40,10 @@ public class NState {
 
     public int getId() {
         return id;
+    }
+
+    public void InitActionProxy(){
+        actionProxy = new ActionProxy();
     }
 
     public void setType(StateType type) {
@@ -83,6 +103,20 @@ public boolean contains(char c) {
             return new HashSet<>();
         }
         return aheadCharSet;
+    }
+
+    public NState onSuccess(SuccessFunction successFunction) {
+        actionProxy.onSuccess(successFunction);
+        return this;
+    }
+
+    public NState onFailed(FailedFunction failedFunction) {
+        actionProxy.onFailed(failedFunction);
+        return this;
+    }
+
+    public ActionProxy getActionProxy() {
+        return actionProxy;
     }
 
     @Override

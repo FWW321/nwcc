@@ -42,10 +42,11 @@ public class CharSet {
 
     //并集
     public CharSet union(CharSet charSet) {
-        if (charSet == null || charSet.isEmpty()) {
-            return this;
-        }
         CharSet result = new CharSet(false);
+        if (charSet == null || charSet.isEmpty()) {
+            result.chars.addAll(this.chars);
+            return result;
+        }
         result.chars.addAll(this.chars);
         result.chars.addAll(charSet.chars);
         return result;
