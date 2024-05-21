@@ -22,7 +22,7 @@ public class NState {
 
     private ActionProxy actionProxy = null;
 
-    private int priority;
+    private int priority = 0;
 
     public void setPriority(int priority) {
         this.priority = priority;
@@ -30,6 +30,10 @@ public class NState {
 
     public int getPriority() {
         return priority;
+    }
+
+    static public boolean isFinal(NState state){
+        return state.getType() == StateType.FINAL || state.getType() == StateType.AHEAD_FINAL;
     }
 
     Set<NState> epsilon = new HashSet<>();

@@ -811,37 +811,53 @@ public class NFA {
 
 
     //TODO:3
-//    static public Set<CharSet> getAheadCharSet(Set<NState> NStates) {
-//        Set<CharSet> charSets = new HashSet<>();
-//        for (NState nState : NStates) {
-//            if (nState.getType() == StateType.AHEAD || nState.getType() == StateType.AHEAD_FINAL) {
-//                charSets.addAll(nState.getAheadCharSet());
-//            }
-//        }
-//        return charSets.isEmpty() ? null : charSets;
-//    }
-
-    //TODO:3
-    public static Set<CharSet> getAheadCharSet(Set<NState> NStates) {
+    static public void getAheadCharSet(Set<NState> NStates, DState d) {
+        int priorityMax = 0;
         Set<CharSet> charSets = new HashSet<>();
-        Stack<NState> stack = new Stack<>();
-
-        // 初始化栈，推入所有初始状态
         for (NState nState : NStates) {
-            stack.push(nState);
-        }
-
-        // 模拟递归的循环
-        while (!stack.isEmpty()) {
-            NState currentState = stack.pop();
-
-            if (currentState.getType() == StateType.AHEAD || currentState.getType() == StateType.AHEAD_FINAL) {
-                charSets.addAll(currentState.getAheadCharSet());
+            if (nState.getType() == StateType.AHEAD || nState.getType() == StateType.AHEAD_FINAL) {
+                if (nState.getPriority() >= priorityMax) {
+                    priorityMax = nState.getPriority();
+                }
             }
         }
 
-        return charSets.isEmpty() ? null : charSets;
+        for (NState nState : NStates) {
+            if (nState.getType() == StateType.AHEAD || nState.getType() == StateType.AHEAD_FINAL) {
+                if (nState.getPriority() == priorityMax) {
+                    charSets.addAll(nState.getAheadCharSet());
+                }
+            }
+        }
+        System.out.println("-----------charset");
+        System.out.println(charSets);
+        System.out.println("-----------charset");
+        charSets = charSets.isEmpty() ? null : charSets;
+        d.setPriority(priorityMax);
+        d.setAheadCharSet(charSets);
     }
+
+    //TODO:3
+//    public static Set<CharSet> getAheadCharSet(Set<NState> NStates) {
+//        Set<CharSet> charSets = new HashSet<>();
+//        Stack<NState> stack = new Stack<>();
+//
+//        // 初始化栈，推入所有初始状态
+//        for (NState nState : NStates) {
+//            stack.push(nState);
+//        }
+//
+//        // 模拟递归的循环
+//        while (!stack.isEmpty()) {
+//            NState currentState = stack.pop();
+//
+//            if (currentState.getType() == StateType.AHEAD || currentState.getType() == StateType.AHEAD_FINAL) {
+//                charSets.addAll(currentState.getAheadCharSet());
+//            }
+//        }
+//
+//        return charSets.isEmpty() ? null : charSets;
+//    }
 
 
     static public String match(String regex, NFA... nfas) {

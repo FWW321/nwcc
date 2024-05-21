@@ -103,9 +103,14 @@ public class DFA {
         minCharSet();
     }
 
+    //有问题，value虽然为同一个对象，内存地址相同，但是无法通过equals判断
     public boolean putTargetMap(Map<Set<DState>, Set<DState>> map, DState d, Set<DState> target) {
         for (Set<DState> set : map.keySet()) {
-            if (map.get(set) == target) {
+            Set<DState> t = map.get(set);
+            if (target == null && t == null) {
+                set.add(d);
+                return true;
+            }else if (target != null && target.equals(t)) {
                 set.add(d);
                 return true;
             }
@@ -172,6 +177,8 @@ public class DFA {
 //            P.remove(set); set最开始的hashcode为1076,所以在set中的位置也是"1076",后来虽然set的hashcode变为了994,但是在P中的位置还是"1076"，所以remove不掉
         }
         minSelf(R);
+        System.out.println("states");
+        System.out.println(this.states);
         return this;
     }
 
@@ -182,10 +189,7 @@ public class DFA {
             result1.add(dState.getTarge(c1));
             result2.add(dState.getTarge(c2));
         }
-        if(result1.equals(result2)){
-            return true;
-        }
-        return false;
+        return result1.equals(result2);
     }
 
     private void minCharSet(){
@@ -205,6 +209,64 @@ public class DFA {
     }
 
     //TODO:1
+//    public String match(String s) {
+//        String result = null;
+//        Set<Integer> aheadSits = new HashSet<>();
+//        int finalSit = -2;
+//        Stack<Character> characterStack = new Stack<>();
+//        Stack<DState> aheadStack = new Stack<>();
+//        Stack<DState> finalStack = new Stack<>();
+//        DState dState = start;
+//        if (isAhead(dState)) {
+//            aheadStack.push(dState);
+//            aheadSits.add(-1);
+//            if(isFinal(dState)){
+//                finalStack.push(dState);
+//                finalSit = -1;
+//            }
+//        }
+//        char[] chars = s.toCharArray();
+//        for (int i = 0; i < chars.length; i++) {
+//            if (chars[i] == '\n') {
+//                line++;
+//            }
+//            characterStack.push(chars[i]);
+//            dState = dState.getTarge(chars[i]);
+//            if (dState != null && isAhead(dState)) {
+//                aheadStack.push(dState);
+//                aheadSits.add(i);
+//            }
+//            if (dState != null && isFinal(dState)) {
+//                finalStack.push(dState);
+//                finalSit = i;
+//            }
+//            if (dState == null || i == chars.length -1) {
+//                System.out.println("final");
+//                System.out.println(finalSit);
+//                System.out.println(finalStack);
+//                if(!finalStack.isEmpty()){
+//                    if (aheadStack.isEmpty()) {
+//                        result = s.substring(0, finalSit + 1);
+//                    } else {
+//                        int j = finalSit + 1;
+//                        DState ahead = aheadStack.pop();
+//                        Set<CharSet> charSets = ahead.getAheadCharSet();
+//                        while (!characterStack.isEmpty()) {
+//                            char c = characterStack.pop();
+//                            j--;
+//                            if (contains(charSets, c) && aheadSits.contains(j)) {
+//                                result = s.substring(0, j + 1);
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//                return result;
+//            }
+//        }
+//        return null;
+//    }
+
     public String match(String s) {
         String result = null;
         Set<Integer> aheadSits = new HashSet<>();
@@ -237,9 +299,6 @@ public class DFA {
                 finalSit = i;
             }
             if (dState == null || i == chars.length -1) {
-                System.out.println("final");
-                System.out.println(finalSit);
-                System.out.println(finalStack);
                 if(!finalStack.isEmpty()){
                     if (aheadStack.isEmpty()) {
                         result = s.substring(0, finalSit + 1);
@@ -251,7 +310,8 @@ public class DFA {
                             char c = characterStack.pop();
                             j--;
                             if (contains(charSets, c) && aheadSits.contains(j)) {
-                                result = s.substring(0, finalSit + 1);
+                                result = s.substring(0, j + 1);
+                                break;
                             }
                         }
                     }
@@ -324,9 +384,14 @@ public class DFA {
         return input;
     }
 
+    public Set<DState> getStates() {
+        return states;
+    }
+
     public static void main(String[] args) {
-        DFA dfa = new DFA("a*b").minimization();
-        System.out.println(dfa.match(""));
+        DFA dfa = new DFA("a*/b");
+        System.out.println(dfa.getStates());
+        System.out.println(dfa.match("aaaaaaabbbb"));
     }
 }
 

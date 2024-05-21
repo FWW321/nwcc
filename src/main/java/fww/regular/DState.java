@@ -1,7 +1,5 @@
 package fww.regular;
 
-import fww.regular.Interface.FailedFunction;
-import fww.regular.Interface.SuccessFunction;
 import fww.regular.proxy.ActionProxy;
 
 import java.util.*;
@@ -17,22 +15,14 @@ public class DState {
 
     private ActionProxy actionProxy;
 
-    public void InitActionProxy(){
-        actionProxy = new ActionProxy();
-    }
+    private int priority = 0;
 
     public ActionProxy getActionProxy(){
         return actionProxy;
     }
 
-    public DState onSuccess(SuccessFunction successFunction) {
-        actionProxy.onSuccess(successFunction);
-        return this;
-    }
-
-    public DState onFailed(FailedFunction failedFunction) {
-        actionProxy.onFailed(failedFunction);
-        return this;
+    public int getPriority() {
+        return priority;
     }
 
     private DState(){
@@ -42,9 +32,9 @@ public class DState {
     static public DState getDState(Set<DState> dStates){
         DState result = new DState();
         result.id = getDStatesId(dStates);
-        result.stateType = getDStatesType(dStates);
+        getDStatesType(dStates, result);
         result.transition = getTransition(dStates);
-        result.aheadCharSet = getAheadCharSet(dStates);
+        getAheadCharSet(dStates, result);
         return result;
     }
 
@@ -81,16 +71,33 @@ public class DState {
         return false;
     }
 
-    public static StateType getDStatesType(Set<DState> dStates){
+    public static void getDStatesType(Set<DState> dStates, DState d){
         if(isAhead(dStates) && isFinal(dStates)){
-            return StateType.AHEAD_FINAL;
+            d.stateType = StateType.AHEAD_FINAL;
+            getActionD(dStates, d);
         } else if(isAhead(dStates)){
-            return StateType.AHEAD;
+            d.stateType = StateType.AHEAD;
         } else if(isFinal(dStates)){
-            return StateType.FINAL;
+            d.stateType = StateType.FINAL;
+            getActionD(dStates, d);
         } else {
-            return StateType.NORMAL;
+            d.stateType = StateType.NORMAL;
         }
+    }
+
+    public static void getActionD(Set<DState> dStates, DState d){
+        int priorityMax = 0;
+        ActionProxy actionProxyMax = null;
+        for(DState dState : dStates){
+            if(dState.isFinal()){
+                if(dState.getPriority() >= priorityMax){
+                    priorityMax = dState.getPriority();
+                    actionProxyMax = dState.getActionProxy();
+                }
+            }
+        }
+        d.priority = priorityMax;
+        d.actionProxy = actionProxyMax;
     }
 
     public static Map<CharSet, DState> getTransition(Set<DState> dStates){
@@ -98,17 +105,26 @@ public class DState {
         return d.transition;
     }
 
-    public static Set<CharSet> getAheadCharSet(Set<DState> dStates){
+    public static void getAheadCharSet(Set<DState> dStates, DState d){
+        int priorityMax = 0;
         Set<CharSet> result = new HashSet<>();
         for(DState dState : dStates){
             if(dState.isAhead()){
-                result.addAll(dState.getAheadCharSet());
+//                result.addAll(dState.getAheadCharSet());
+                if(dState.getPriority() > priorityMax){
+                    priorityMax = d.getPriority();
+                }
             }
         }
-        if(result.isEmpty()){
-            return null;
+        for(DState dState : dStates){
+            if(dState.isAhead()){
+                if(dState.getPriority() == priorityMax){
+                    result.addAll(dState.getAheadCharSet());
+                }
+            }
         }
-        return result;
+        result = result.isEmpty() ? null : result;
+        d.setAheadCharSet(result);
     }
 
     private int[] getId() {
@@ -119,6 +135,28 @@ public class DState {
         return id.length;
     }
 
+    private void getAction(Set<NState> nStates){
+        if(!NFA.isFinal(nStates)){
+            return;
+        }
+        int priorityMax = 0;
+        ActionProxy actionProxyMax = null;
+        for(NState nState : nStates){
+            if(NState.isFinal(nState)){
+                if(nState.getPriority() >= priorityMax){
+                    priorityMax = nState.getPriority();
+                    actionProxyMax = nState.getActionProxy();
+                }
+            }
+        }
+        this.actionProxy = actionProxyMax;
+        this.priority = priorityMax;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
     public DState(Set<NState> nStates) {
         id = new int[nStates.size()];
         int i = 0;
@@ -127,14 +165,23 @@ public class DState {
         }
         if(NFA.isAhead(nStates) && NFA.isFinal(nStates)) {
             stateType = StateType.AHEAD_FINAL;
+            getAction(nStates);
         } else if(NFA.isAhead(nStates)) {
             stateType = StateType.AHEAD;
         } else if(NFA.isFinal(nStates)) {
             stateType = StateType.FINAL;
+            getAction(nStates);
         } else {
             stateType = StateType.NORMAL;
         }
-        aheadCharSet = NFA.getAheadCharSet(nStates);
+        NFA.getAheadCharSet(nStates, this);
+        System.out.println("--------this charset");
+        System.out.println(this.aheadCharSet);
+        System.out.println("--------this charset");
+    }
+
+    public void setAheadCharSet(Set<CharSet> aheadCharSet) {
+        this.aheadCharSet = aheadCharSet;
     }
 
     public void addTransition(CharSet charSet, DState dState) {
