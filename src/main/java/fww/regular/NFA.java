@@ -829,9 +829,6 @@ public class NFA {
                 }
             }
         }
-        System.out.println("-----------charset");
-        System.out.println(charSets);
-        System.out.println("-----------charset");
         charSets = charSets.isEmpty() ? null : charSets;
         d.setPriority(priorityMax);
         d.setAheadCharSet(charSets);
