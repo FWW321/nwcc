@@ -10,6 +10,7 @@ public class MultiBuffer {
     private int currentSize;
     private int maxSize;
     private final int minSize;
+    private final MultiBufferNode head;
 
     public MultiBuffer(int minSize, int maxSize, int bufferSize){
         this.bufferSize = bufferSize;
@@ -18,6 +19,7 @@ public class MultiBuffer {
         beginIndex = 0;
         currentIndex = bufferSize - 1;
         first = new MultiBufferNode(bufferSize);
+        this.head = first;
         first.setFull(true);
         current = first;
         last = first;
@@ -33,7 +35,7 @@ public class MultiBuffer {
         first = first.next();
         last.setNext(first);
         first.setPrev(last);
-        last = current;
+        last = first;
         this.currentSize = minSize;
     }
 
@@ -61,11 +63,12 @@ public class MultiBuffer {
                 next.setFull(false);
                 currentIndex = 0;
             }else {
-                if(next == first){
+                if(next == first && current != head){
                     if(currentSize < maxSize){
                         current.addNext();
                         currentSize++;
                     }else {
+                        System.out.println("缓冲区不足, 请增加缓冲区大小");
                         throw new RuntimeException("缓冲区不足, 请增加缓冲区大小");
                     }
                 }
