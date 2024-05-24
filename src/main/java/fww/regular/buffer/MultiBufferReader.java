@@ -7,8 +7,41 @@ public class MultiBufferReader implements Runnable {
         this.buffer = buffer;
     }
 
+//    @Override
+//    public void run(){
+//        boolean flag;
+//        char c;
+//        while(true){
+//            flag = buffer.currentNext();
+//            if(!flag){
+//                synchronized (buffer){
+//                    buffer.notify();
+//                    try {
+//                        buffer.wait();
+//                    } catch (InterruptedException e) {
+//                        Thread.currentThread().interrupt();
+//                    }
+//                }
+//                continue;
+//            }
+//            c = buffer.getCurrent();
+//            if(c == '\n'){
+////                buffer.undo(5);
+//                buffer.commit();
+//            }
+//            if(c == Tool.NIL){
+//                System.out.println("read end");
+//                synchronized (buffer){
+//                    buffer.notify();
+//                }
+//                return;
+//            }
+//            System.out.print(c);
+//        }
+//    }
+
     @Override
-    public void run(){
+    public void run() {
         boolean flag;
         char c;
         while(true){
