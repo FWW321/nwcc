@@ -1,9 +1,13 @@
 package fww.regular.buffer;
 
+import fww.regular.Interface.TaskFunction;
+
 public class MultiBufferReader implements Runnable {
     private final MultiBuffer buffer;
+    private final TaskFunction taskFunction;
 
-    public MultiBufferReader(MultiBuffer buffer){
+    public MultiBufferReader(MultiBuffer buffer, TaskFunction taskFunction){
+        this.taskFunction = taskFunction;
         this.buffer = buffer;
     }
 
@@ -58,18 +62,16 @@ public class MultiBufferReader implements Runnable {
                 continue;
             }
             c = buffer.getCurrent();
-            if(c == '\n'){
-//                buffer.undo(5);
-                buffer.commit();
-            }
-            if(c == Tool.NIL){
+            int num = taskFunction.task(c);
+            if(num < 0){
                 System.out.println("read end");
                 synchronized (buffer){
                     buffer.notify();
                 }
                 return;
+            }else {
+                buffer.undo(num);
             }
-            System.out.print(c);
         }
     }
 

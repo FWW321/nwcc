@@ -886,10 +886,4 @@ public class NFA {
                 ", states=" + NStates +
                 '}';
     }
-
-
-    public static void main(String[] args) {
-        NFA nfa = new NFA("a[^b]");
-        System.out.println(nfa.match("ab"));
-    }
 }

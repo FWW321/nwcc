@@ -15,6 +15,8 @@ public class DFA {
 
     private DState start;
 
+    private MacthHelper macthHelper = new MacthHelper();
+
     private ActionProxy actionProxy;
 
     public DFA(String regex) {
@@ -267,7 +269,62 @@ public class DFA {
 //        return null;
 //    }
 
-    public String match(String s) {
+//    public String match(String s) {
+//        String result = null;
+//        Set<Integer> aheadSits = new HashSet<>();
+//        int finalSit = -2;
+//        Stack<Character> characterStack = new Stack<>();
+//        Stack<DState> aheadStack = new Stack<>();
+//        Stack<DState> finalStack = new Stack<>();
+//        DState dState = start;
+//        if (isAhead(dState)) {
+//            aheadStack.push(dState);
+//            aheadSits.add(-1);
+//            if(isFinal(dState)){
+//                finalStack.push(dState);
+//                finalSit = -1;
+//            }
+//        }
+//        char[] chars = s.toCharArray();
+//        for (int i = 0; i < chars.length; i++) {
+//            if (chars[i] == '\n') {
+//                line++;
+//            }
+//            characterStack.push(chars[i]);
+//            dState = dState.getTarge(chars[i]);
+//            if (dState != null && isAhead(dState)) {
+//                aheadStack.push(dState);
+//                aheadSits.add(i);
+//            }
+//            if (dState != null && isFinal(dState)) {
+//                finalStack.push(dState);
+//                finalSit = i;
+//            }
+//            if (dState == null || i == chars.length -1) {
+//                if(!finalStack.isEmpty()){
+//                    if (aheadStack.isEmpty()) {
+//                        result = s.substring(0, finalSit + 1);
+//                    } else {
+//                        int j = finalSit + 1;
+//                        DState ahead = aheadStack.pop();
+//                        Set<CharSet> charSets = ahead.getAheadCharSet();
+//                        while (!characterStack.isEmpty()) {
+//                            char c = characterStack.pop();
+//                            j--;
+//                            if (contains(charSets, c) && aheadSits.contains(j)) {
+//                                result = s.substring(0, j + 1);
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//                return result;
+//            }
+//        }
+//        return null;
+//    }
+
+    public String match(char c) {
         String result = null;
         Set<Integer> aheadSits = new HashSet<>();
         int finalSit = -2;
