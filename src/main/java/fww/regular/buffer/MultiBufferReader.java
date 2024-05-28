@@ -92,12 +92,12 @@ public class MultiBufferReader implements Runnable {
     }
 
     public static void main(String[] args) {
-        MultiBuffer buffer = new MultiBuffer();
-        MultiBufferWriter writer = new MultiBufferWriter("src/main/java/fww/regular/buffer/MultiBufferReader.java", buffer);
-        Thread writerThread = new Thread(writer);
-        MultiBufferReader reader = new MultiBufferReader(buffer);
-        Thread readerThread = new Thread(reader);
-        writerThread.start();
-        readerThread.start();
+//        MultiBuffer buffer = new MultiBuffer();
+//        MultiBufferWriter writer = new MultiBufferWriter("src/main/java/fww/regular/buffer/MultiBufferReader.java", buffer);
+//        Thread writerThread = new Thread(writer);
+//        MultiBufferReader reader = new MultiBufferReader(buffer);
+//        Thread readerThread = new Thread(reader);
+//        writerThread.start();
+//        readerThread.start();
     }
 }

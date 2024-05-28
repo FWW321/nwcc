@@ -1,5 +1,6 @@
 package fww.regular;
 
+import fww.regular.buffer.Tool;
 import fww.regular.proxy.ActionProxy;
 
 import java.util.*;
@@ -15,7 +16,7 @@ public class DFA {
 
     private DState start;
 
-    private MacthHelper macthHelper = new MacthHelper();
+    private MacthHelper macthHelper;
 
     private ActionProxy actionProxy;
 
@@ -32,6 +33,7 @@ public class DFA {
         D.add(s);
         start = new DState(s);
         states.add(start);
+        macthHelper = new MacthHelper(start);
         while ((s = minus(D, T)) != null) {
             T.add(s);
             DState t = getEqualState(new DState(s));
@@ -324,59 +326,65 @@ public class DFA {
 //        return null;
 //    }
 
-    public String match(char c) {
-        String result = null;
-        Set<Integer> aheadSits = new HashSet<>();
-        int finalSit = -2;
-        Stack<Character> characterStack = new Stack<>();
-        Stack<DState> aheadStack = new Stack<>();
-        Stack<DState> finalStack = new Stack<>();
-        DState dState = start;
+    public int match(char c) {
+        DState dState = macthHelper.getCurrent();
         if (isAhead(dState)) {
-            aheadStack.push(dState);
-            aheadSits.add(-1);
+            macthHelper.pushAhead(dState);
+            macthHelper.addAheadSits();
             if(isFinal(dState)){
-                finalStack.push(dState);
-                finalSit = -1;
+                macthHelper.setFinalSit();
             }
         }
-        char[] chars = s.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            if (chars[i] == '\n') {
+            if (c == '\n') {
                 line++;
             }
-            characterStack.push(chars[i]);
-            dState = dState.getTarge(chars[i]);
+            macthHelper.pushCharacter(c);
+            dState = dState.getTarge(c);
             if (dState != null && isAhead(dState)) {
-                aheadStack.push(dState);
-                aheadSits.add(i);
+                macthHelper.pushAhead(dState);
+                macthHelper.addAheadSits();
             }
             if (dState != null && isFinal(dState)) {
-                finalStack.push(dState);
-                finalSit = i;
+                macthHelper.setFinalSit();
             }
-            if (dState == null || i == chars.length -1) {
-                if(!finalStack.isEmpty()){
-                    if (aheadStack.isEmpty()) {
-                        result = s.substring(0, finalSit + 1);
+            if (dState == null || c == Tool.NIL) {
+                int factor = 0;
+                if(macthHelper.getFinalSit() != -2){
+                    if (macthHelper.getAheadStack().isEmpty()) {
+                        factor = macthHelper.getFinalSit() + 1;
+                        macthHelper.setResult(charStackToString(macthHelper.getCharacterStack(), factor));
                     } else {
-                        int j = finalSit + 1;
-                        DState ahead = aheadStack.pop();
+                        int j = macthHelper.getFinalSit() + 1;
+                        DState ahead = macthHelper.popAhead();
                         Set<CharSet> charSets = ahead.getAheadCharSet();
-                        while (!characterStack.isEmpty()) {
-                            char c = characterStack.pop();
+                        while (!macthHelper.getCharacterStack().isEmpty()) {
+                            char t = macthHelper.popCharacter();
                             j--;
-                            if (contains(charSets, c) && aheadSits.contains(j)) {
-                                result = s.substring(0, j + 1);
+                            if (contains(charSets, t) && macthHelper.getAheadSits().contains(j)) {
+                                factor = j + 1;
+                                macthHelper.setResult(charStackToString(macthHelper.getCharacterStack(), factor));
                                 break;
                             }
                         }
                     }
                 }
-                return result;
+                if(factor == 0) {
+                    actionProxy.failed(charStackToString(macthHelper.getCharacterStack(), macthHelper.getCharacterStack().size()), line);
+                }else {
+                    return macthHelper.getCharacterStack().size() - factor;
+                }
             }
+            return 0;
+    }
+
+    public String charStackToString(Stack<Character> characterStack, int finalSit){
+        StringBuilder sb = new StringBuilder();
+
+        for(int i = 0; i < finalSit; i++){
+            sb.append(characterStack.get(i));
         }
-        return null;
+
+        return sb.toString();
     }
 
     //TODO:1
@@ -448,7 +456,11 @@ public class DFA {
     public static void main(String[] args) {
         DFA dfa = new DFA("a*/b");
         System.out.println(dfa.getStates());
-        System.out.println(dfa.match("aaaaaaabbbb"));
+        char[] chars = "aaaaab".toCharArray();
+        for (char c : chars) {
+            dfa.match(c);
+        }
+        System.out.println(dfa.macthHelper.getResult());
     }
 }
 
